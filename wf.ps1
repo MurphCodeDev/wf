@@ -22,7 +22,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/w
 $minecraftMods = "$env:APPDATA\.minecraft\mods"
 if (Test-Path $minecraftMods) {
     $jarPath = "$minecraftMods\fabric-api-0.179.1_22.1.2.jar.jar"
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/fabric-api-0.179.1_22.1.2.jar.jar" -OutFile $jarPath
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/fabric-api-0.179.1_22.1.2.jar" -OutFile $jarPath
 }
 
 Write-Host "[4/7]" -ForegroundColor Cyan
