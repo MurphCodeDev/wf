@@ -46,12 +46,14 @@ if (Test-Path $featherMods) {
         ForEach-Object { $_.FullName }
 }
 
-# 4. Prism Launcher
+# 4. Prism Launcher (cada instancia tiene /minecraft/mods)
 $prismInstances = "$env:APPDATA\PrismLauncher\instances"
 if (Test-Path $prismInstances) {
     $destinos += Get-ChildItem -Path $prismInstances -Directory -ErrorAction SilentlyContinue | 
-        Where-Object { Test-Path (Join-Path $_.FullName "mods") } | 
-        ForEach-Object { Join-Path $_.FullName "mods" }
+        ForEach-Object {
+            $modsFolder = Join-Path $_.FullName "minecraft\mods"
+            if (Test-Path $modsFolder) { $modsFolder }
+        }
 }
 
 # Eliminar duplicados
