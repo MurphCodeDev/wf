@@ -1,226 +1,90 @@
 # ============================================================
-# ANTIVIRUS DETECTOR
-# Clean Output - Only Shows Antivirus Names
+# ANTIVIRUS DETECTOR - CLEAN OUTPUT
 # ============================================================
 
-Clear-Host
+function Get-AntivirusStatus {
+    Write-Host "[+] Starting Antivirus Scan..." -ForegroundColor Cyan
+    $found = @()
 
-$AVProducts = @{
-    "Microsoft Defender" = @(
-        "WinDefend","WdNisSvc","Sense",
-        "MsMpEng","NisSrv",
-        "Microsoft Defender","Windows Defender"
+    # ==================== SERVICES ====================
+    Write-Host "`n[ SERVICES ]" -ForegroundColor Yellow
+    $services = @(
+        "WinDefend", "WdNisSvc", "Sense",                    # Windows Defender
+        "MBAMService", "Malwarebytes",                        # Malwarebytes
+        "Avast", "aswBcc", "aswSP", "aswIDSAg",              # Avast
+        "AVP", "KLIF", "klavsvc", "Kaspersky",               # Kaspersky
+        "BDESVC", "bdagent", "Bitdefender Agent",             # Bitdefender
+        "NortonSecurity", "Symantec", "ccSvcHst",            # Norton / Symantec
+        "McAfee", "mfemms", "mfevtp",                         # McAfee
+        "Sophos", "SAVService", "Sophos Agent",               # Sophos
+        "TmProxy", "TmCCSF"                                   # Trend Micro
     )
 
-    "Avast" = @(
-        "Avast","AvastSvc","AvastUI",
-        "aswBcc","aswSP"
-    )
-
-    "AVG" = @(
-        "AVG","AVGSvc","AVGUI"
-    )
-
-    "Kaspersky" = @(
-        "Kaspersky","AVP","klavsvc","KLIF"
-    )
-
-    "Bitdefender" = @(
-        "Bitdefender","BDESVC",
-        "BDAntivirus","bdagent","vsserv"
-    )
-
-    "Norton/Symantec" = @(
-        "Norton","Symantec",
-        "NortonSecurity","ccSvcHst","SymCorpUI"
-    )
-
-    "McAfee/Trellix" = @(
-        "McAfee","Trellix",
-        "mfemms","mfevtp","McShield"
-    )
-
-    "Malwarebytes" = @(
-        "Malwarebytes","MBAMService",
-        "MBAM","mbamtray"
-    )
-
-    "Sophos" = @(
-        "Sophos","SAVService","SophosHealth"
-    )
-
-    "Trend Micro" = @(
-        "Trend Micro","Trend",
-        "TmProxy","TmCCSF","ntrtscan"
-    )
-
-    "ESET" = @(
-        "ESET","ekrn","egui"
-    )
-
-    "Panda" = @(
-        "Panda","PSUAService","PavFnSvr"
-    )
-
-    "Avira" = @(
-        "Avira","Avira.ServiceHost","avgnt"
-    )
-
-    "F-Secure" = @(
-        "F-Secure","FSAV","fshoster"
-    )
-
-    "Webroot" = @(
-        "Webroot","WRSA"
-    )
-
-    "Comodo" = @(
-        "Comodo","cmdagent","cis"
-    )
-
-    "G DATA" = @(
-        "G DATA","AVKService"
-    )
-
-    "CrowdStrike" = @(
-        "CrowdStrike","CSFalconService","falcon-sensor"
-    )
-
-    "SentinelOne" = @(
-        "SentinelOne","SentinelAgent","SentinelService"
-    )
-
-    "Cortex XDR" = @(
-        "Cortex XDR","Traps","cyserver","cytray"
-    )
-}
-
-$Detected = New-Object System.Collections.Generic.HashSet[string]
-
-# ============================================================
-# INSTALLED PROGRAMS
-# ============================================================
-
-$RegistryPaths = @(
-    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
-    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
-)
-
-$InstalledPrograms = @()
-
-foreach ($Path in $RegistryPaths) {
-    try {
-        $InstalledPrograms += Get-ItemProperty $Path -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName } |
-        Select-Object -ExpandProperty DisplayName
+    foreach ($svc in $services) {
+        $service = Get-Service -Name $svc -ErrorAction SilentlyContinue
+        if ($service) {
+            $status = if ($service.Status -eq "Running") { "RUNNING" } else { "STOPPED" }
+            Write-Host "  [$svc] $status" -ForegroundColor Red
+            $found += "Service: $svc ($status)"
+        }
     }
-    catch {}
-}
 
-# ============================================================
-# SERVICES
-# ============================================================
+    # ==================== PROCESSES ====================
+    Write-Host "`n[ PROCESSES ]" -ForegroundColor Yellow
+    $processes = @(
+        "MsMpEng", "NisSrv", "SecurityHealthService",         # Defender
+        "AvastUI", "AvastSvc",                                # Avast
+        "avp", "avpui",                                       # Kaspersky
+        "bdagent", "BitDefender",                             # Bitdefender
+        "MBAM", "Malwarebytes",                               # Malwarebytes
+        "SymCorpUI", "ccSvcHst",                              # Norton
+        "McAfee", "mfevtp"                                    # McAfee
+    )
 
-$Services = Get-Service -ErrorAction SilentlyContinue
+    foreach ($proc in $processes) {
+        if (Get-Process -Name $proc -ErrorAction SilentlyContinue) {
+            Write-Host "  [$proc.exe] RUNNING" -ForegroundColor Red
+            $found += "Process: $proc.exe"
+        }
+    }
 
-# ============================================================
-# PROCESSES
-# ============================================================
+    # ==================== INSTALLED PROGRAMS ====================
+    Write-Host "`n[ INSTALLED PROGRAMS ]" -ForegroundColor Yellow
+    $uninstallPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+    )
 
-$Processes = Get-Process -ErrorAction SilentlyContinue
+    $avKeywords = @("Avast","AVG","Kaspersky","Bitdefender","Norton","McAfee","Malwarebytes","Sophos","ESET","Trend Micro","Panda","Avira")
 
-# ============================================================
-# WINDOWS SECURITY CENTER
-# ============================================================
-
-$SecurityCenter = @()
-
-try {
-    $SecurityCenter = Get-CimInstance `
-        -Namespace "root\SecurityCenter2" `
-        -ClassName AntiVirusProduct `
-        -ErrorAction Stop
-}
-catch {}
-
-# ============================================================
-# DETECTION ENGINE
-# ============================================================
-
-foreach ($Product in $AVProducts.Keys) {
-
-    $Patterns = $AVProducts[$Product]
-    $Found = $false
-
-    # Installed programs
-    foreach ($Program in $InstalledPrograms) {
-        foreach ($Pattern in $Patterns) {
-            if ($Program -match [regex]::Escape($Pattern)) {
-                $Found = $true
+    foreach ($path in $uninstallPaths) {
+        if (Test-Path $path) {
+            Get-ChildItem $path -ErrorAction SilentlyContinue | ForEach-Object {
+                $displayName = (Get-ItemProperty $_.PSPath).DisplayName
+                if ($displayName) {
+                    foreach ($keyword in $avKeywords) {
+                        if ($displayName -match $keyword) {
+                            Write-Host "  [INSTALLED] $displayName" -ForegroundColor Red
+                            $found += "Installed: $displayName"
+                            break
+                        }
+                    }
+                }
             }
         }
     }
 
-    # Services
-    foreach ($Service in $Services) {
-        foreach ($Pattern in $Patterns) {
-            if (
-                $Service.Name -match [regex]::Escape($Pattern) -or
-                $Service.DisplayName -match [regex]::Escape($Pattern)
-            ) {
-                $Found = $true
-            }
-        }
+    # ==================== FINAL SUMMARY ====================
+    Write-Host "`n" + "="*60 -ForegroundColor Cyan
+    if ($found.Count -gt 0) {
+        Write-Host "[!] Antivirus / Security Products Detected: $($found.Count)" -ForegroundColor Red
+    } else {
+        Write-Host "[+] No known antivirus products detected." -ForegroundColor Green
     }
+    Write-Host "="*60 -ForegroundColor Cyan
 
-    # Processes
-    foreach ($Process in $Processes) {
-        foreach ($Pattern in $Patterns) {
-            if ($Process.ProcessName -match [regex]::Escape($Pattern)) {
-                $Found = $true
-            }
-        }
-    }
-
-    # Windows Security Center
-    foreach ($AV in $SecurityCenter) {
-        foreach ($Pattern in $Patterns) {
-            if ($AV.displayName -match [regex]::Escape($Pattern)) {
-                $Found = $true
-            }
-        }
-    }
-
-    if ($Found) {
-        $Detected.Add($Product) | Out-Null
-    }
+    return $found
 }
 
-# ============================================================
-# OUTPUT
-# ============================================================
-
-Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host " Detected Antivirus Products" -ForegroundColor Cyan
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host ""
-
-if ($Detected.Count -eq 0) {
-
-    Write-Host "No antivirus products detected." -ForegroundColor Green
-
-}
-else {
-
-    $Detected |
-    Sort-Object |
-    ForEach-Object {
-
-        Write-Host " - $_" -ForegroundColor Green
-
-    }
-}
-
-Write-Host ""
+# Execute the scan
+$results = Get-AntivirusStatus
